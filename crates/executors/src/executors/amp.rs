@@ -10,10 +10,7 @@ use utils::{msg_store::MsgStore, shell::get_shell_command};
 use crate::{
     command::CommandBuilder,
     executors::{ExecutorError, StandardCodingAgentExecutor, claude::ClaudeLogProcessor},
-    logs::{
-        stderr_processor::normalize_stderr_logs,
-        utils::EntryIndexProvider,
-    },
+    logs::{stderr_processor::normalize_stderr_logs, utils::EntryIndexProvider},
 };
 
 /// An executor that uses Amp to process tasks

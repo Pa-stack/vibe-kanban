@@ -29,9 +29,13 @@ impl StandardCodingAgentExecutor for Amp {
     ) -> Result<AsyncGroupChild, ExecutorError> {
         let (shell_cmd, shell_arg) = get_shell_command();
         let combined_prompt = utils::text::combine_prompt(&self.append_prompt, prompt);
-        
+
         // Build command with prompt as argument to --execute
-        let amp_command = format!("{} {}", self.command.build_initial(), shell_escape::escape(combined_prompt.into()));
+        let amp_command = format!(
+            "{} {}",
+            self.command.build_initial(),
+            shell_escape::escape(combined_prompt.into())
+        );
 
         let mut command = Command::new(shell_cmd);
         command

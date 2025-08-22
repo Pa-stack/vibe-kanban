@@ -28,25 +28,27 @@ impl StandardCodingAgentExecutor for Amp {
         prompt: &str,
     ) -> Result<AsyncGroupChild, ExecutorError> {
         let (shell_cmd, shell_arg) = get_shell_command();
+        let amp_command = self.command.build_initial();
         let combined_prompt = utils::text::combine_prompt(&self.append_prompt, prompt);
-
-        // Build command with prompt as argument to --execute
-        let amp_command = format!(
-            "{} {}",
-            self.command.build_initial(),
-            shell_escape::escape(combined_prompt.into())
-        );
 
         let mut command = Command::new(shell_cmd);
         command
             .kill_on_drop(true)
+            .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .current_dir(current_dir)
             .arg(shell_arg)
-            .arg(amp_command);
+            .arg(&amp_command);
 
-        let child = command.group_spawn()?;
+        let mut child = command.group_spawn()?;
+
+        // Feed the prompt in, then close the pipe so amp sees EOF
+        if let Some(mut stdin) = child.inner().stdin.take() {
+            stdin.write_all(combined_prompt.as_bytes()).await?;
+            stdin.shutdown().await?;
+        }
+
         Ok(child)
     }
 

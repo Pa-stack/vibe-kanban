@@ -208,6 +208,7 @@ mod tests {
 
         let amp_command = get_profile_command("amp");
         assert!(amp_command.contains("npx -y @sourcegraph/amp@latest"));
+        assert!(amp_command.contains("--execute"));
         assert!(amp_command.contains("--stream-json"));
 
         let gemini_command = get_profile_command("gemini");

@@ -3,13 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import {
-  FolderOpen,
-  Plus,
-  Settings,
-  LibraryBig,
-  Globe2,
-} from 'lucide-react';
+import { FolderOpen, Plus, Settings, LibraryBig, Globe2 } from 'lucide-react';
 import { Loader } from '@/components/ui/loader';
 import { projectsApi, tasksApi, templatesApi } from '@/lib/api';
 import { TaskFormDialog } from '@/components/tasks/TaskFormDialog';
@@ -74,34 +68,6 @@ export function ProjectTasks() {
   // Panel state
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
-  const [isPanelFullscreen, setIsPanelFullscreen] = useState(false);
-  const [forceCreateAttempt, setForceCreateAttempt] = useState(false);
-
-  // Map status to label and dot color (duplicated from TaskDetailsHeader)
-  const statusLabels: Record<TaskStatus, string> = {
-    todo: 'To Do',
-    inprogress: 'In Progress',
-    inreview: 'In Review',
-    done: 'Done',
-    cancelled: 'Cancelled',
-  };
-
-  const getTaskStatusDotColor = (status: TaskStatus): string => {
-    switch (status) {
-      case 'todo':
-        return 'bg-gray-400';
-      case 'inprogress':
-        return 'bg-blue-500';
-      case 'inreview':
-        return 'bg-yellow-500';
-      case 'done':
-        return 'bg-green-500';
-      case 'cancelled':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-400';
-    }
-  };
 
   // Define task creation handler
   const handleCreateNewTask = useCallback(() => {
@@ -304,7 +270,6 @@ export function ProjectTasks() {
   );
 
   const handleClosePanel = useCallback(() => {
-    setIsPanelFullscreen(false);
     // setIsPanelOpen(false);
     // setSelectedTask(null);
     // Remove task ID from URL when closing panel
@@ -403,7 +368,6 @@ export function ProjectTasks() {
       // Close panel when no taskId in URL
       setIsPanelOpen(false);
       setSelectedTask(null);
-      setIsPanelFullscreen(false);
     }
   }, [taskId, tasks, loading, fetchTasks]);
 
@@ -415,16 +379,10 @@ export function ProjectTasks() {
     return <div className="text-center py-8 text-destructive">{error}</div>;
   }
 
-  const panelClassName = isPanelFullscreen
-    ? 'absolute inset-0 z-50 w-full h-full bg-background overflow-hidden'
-    : undefined;
-
   return (
-    <div className={`${getMainContainerClasses(isPanelOpen)} relative`}>
+    <div className={getMainContainerClasses(isPanelOpen, true)}>
       {/* Left Column - Kanban Section */}
-      <div
-        className={getKanbanSectionClasses(isPanelOpen && !isPanelFullscreen)}
-      >
+      <div className={getKanbanSectionClasses(isPanelOpen, true)}>
         {/* Header */}
 
         <div className="px-8 my-12 flex flex-row">
@@ -569,13 +527,6 @@ export function ProjectTasks() {
           onEditTask={handleEditTask}
           onDeleteTask={handleDeleteTask}
           isDialogOpen={isTaskDialogOpen || isProjectSettingsOpen}
-          hideBackdrop={isPanelFullscreen}
-          className={panelClassName}
-          isFullScreen={isPanelFullscreen}
-          onToggleFullScreen={() => setIsPanelFullscreen((v) => !v)}
-          forceCreateAttempt={forceCreateAttempt}
-          onLeaveForceCreateAttempt={() => setForceCreateAttempt(false)}
-          onNewAttempt={() => setForceCreateAttempt(true)}
         />
       )}
 

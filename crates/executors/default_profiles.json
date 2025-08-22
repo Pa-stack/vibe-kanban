@@ -58,6 +58,7 @@
         "command": {
           "base": "npx -y @sourcegraph/amp@latest",
           "params": [
+            "--execute",
             "--stream-json",
             "--dangerously-allow-all"
           ]

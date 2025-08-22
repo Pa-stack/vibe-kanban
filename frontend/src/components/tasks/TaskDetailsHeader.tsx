@@ -67,7 +67,7 @@ function TaskDetailsHeader({
   return (
     <div>
       {/* Title and Task Actions */}
-      <div className={isFullScreen ? 'p-0' : 'p-4 pb-2'}>
+      <div className="p-4 pb-2">
         {/* Top row: title and action icons */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0 flex items-start gap-2">
@@ -175,11 +175,10 @@ function TaskDetailsHeader({
                 {task.description ? (
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`whitespace-pre-wrap ${
-                        !isDescriptionExpanded && task.description.length > 150
-                          ? 'line-clamp-3'
-                          : ''
-                      }`}
+                      className={`whitespace-pre-wrap ${!isDescriptionExpanded && task.description.length > 150
+                        ? 'line-clamp-3'
+                        : ''
+                        }`}
                     >
                       {task.description}
                     </p>

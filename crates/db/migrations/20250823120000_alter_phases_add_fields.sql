@@ -7,7 +7,6 @@ ALTER TABLE phases ADD COLUMN allowlist TEXT;
 ALTER TABLE phases ADD COLUMN denylist TEXT;
 ALTER TABLE phases ADD COLUMN agent_override TEXT;
 ALTER TABLE phases ADD COLUMN warm_kpi_budget REAL;
-ALTER TABLE phases ADD COLUMN created_at TEXT;
 ALTER TABLE phases ADD COLUMN updated_at TEXT;
 
 -- Index for deterministic listing

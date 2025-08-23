@@ -1,12 +1,13 @@
-use axum::{extract::{Path, State}, response::Json as ResponseJson, routing::{post, patch}, Router};
+use axum::{extract::{Path, State}, response::Json as ResponseJson, routing::{post, patch, get}, Router, Json};
 use serde_json::json;
 use uuid::Uuid;
+use sqlx::Row;
 use crate::DeploymentImpl;
 use utils::response::ApiResponse;
 
 pub fn router(_deployment: &DeploymentImpl) -> Router<DeploymentImpl> {
     Router::new()
-        .route("/tasks/:id/phases", post(create_phase))
+        .route("/tasks/:id/phases", post(create_phase).get(list_phases))
         .route("/phases/:id", patch(update_phase))
 }
 
@@ -37,7 +38,7 @@ async fn create_phase(State(deployment): State<DeploymentImpl>, Path(task_id): P
 #[derive(serde::Deserialize)]
 struct PhasePatch { status: Option<String>, allowlist: Option<serde_json::Value>, denylist: Option<serde_json::Value>, agent_override: Option<Option<String>>, warm_kpi_budget: Option<Option<f64>>, r#type: Option<String> }
 
-async fn update_phase(State(deployment): State<DeploymentImpl>, Path(phase_id): Path<String>, ResponseJson(p): ResponseJson<PhasePatch>) -> ResponseJson<ApiResponse<serde_json::Value>> {
+async fn update_phase(State(deployment): State<DeploymentImpl>, Path(phase_id): Path<String>, Json(p): Json<PhasePatch>) -> ResponseJson<ApiResponse<serde_json::Value>> {
     let pool = &deployment.db().pool;
     let mut sets: Vec<&str> = Vec::new();
     if p.status.is_some() { sets.push("status = ?"); }
@@ -63,4 +64,47 @@ async fn update_phase(State(deployment): State<DeploymentImpl>, Path(phase_id): 
         "status": p.status,
         "warm_kpi_budget": p.warm_kpi_budget,
     })))
+}
+
+async fn list_phases(
+    State(deployment): State<DeploymentImpl>,
+    Path(task_id): Path<String>,
+) -> ResponseJson<ApiResponse<serde_json::Value>> {
+    let Ok(task_uuid) = Uuid::parse_str(&task_id) else {
+        return ResponseJson(ApiResponse::error("invalid_task_id"));
+    };
+    let pool = &deployment.db().pool;
+    let rows = sqlx::query(
+        "SELECT phase_id, type, status, allowlist, denylist, agent_override, warm_kpi_budget, created_at, updated_at FROM phases WHERE task_id = ?1 ORDER BY created_at ASC, phase_id ASC",
+    )
+    .bind(task_uuid)
+    .fetch_all(pool)
+    .await
+    .unwrap_or_default();
+    let list: Vec<serde_json::Value> = rows
+        .into_iter()
+        .map(|r| {
+            let phase_id: String = r.get::<String, _>(0);
+            let typ: String = r.get::<String, _>(1);
+            let status: String = r.get::<String, _>(2);
+            let allowlist: String = r.get::<String, _>(3);
+            let denylist: String = r.get::<String, _>(4);
+            let agent_override: Option<String> = r.get::<Option<String>, _>(5);
+            let warm_kpi_budget: Option<f64> = r.get::<Option<f64>, _>(6);
+            let created_at: String = r.get::<String, _>(7);
+            let updated_at: String = r.get::<String, _>(8);
+            serde_json::json!({
+                "phase_id": phase_id,
+                "type": typ,
+                "status": status,
+                "allowlist": serde_json::from_str::<serde_json::Value>(&allowlist).unwrap_or(serde_json::json!([])),
+                "denylist": serde_json::from_str::<serde_json::Value>(&denylist).unwrap_or(serde_json::json!([])),
+                "agent_override": agent_override,
+                "warm_kpi_budget": warm_kpi_budget,
+                "created_at": created_at,
+                "updated_at": updated_at,
+            })
+        })
+        .collect();
+    ResponseJson(ApiResponse::success(serde_json::json!(list)))
 }

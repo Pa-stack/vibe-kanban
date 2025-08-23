@@ -60,7 +60,7 @@ export function ProjectContextPanel({ projectId }: { projectId: string }) {
               <td>
                 <a
                   className="text-blue-600 hover:underline"
-                  href={`/api/uploads/${it.content_hash}/${encodeURIComponent(it.filename)}`}
+                  href={`/api/projects/${projectId}/uploads/${it.content_hash}/${encodeURIComponent(it.filename)}`}
                   download
                 >
                   Download

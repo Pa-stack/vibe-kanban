@@ -36,7 +36,7 @@ interface TaskDetailsPanelProps {
   className?: string;
   hideHeader?: boolean;
   isFullScreen?: boolean;
-  onToggleFullScreen?: () => void;
+  setFullScreen?: (value: boolean) => void;
   forceCreateAttempt?: boolean;
   onLeaveForceCreateAttempt?: () => void;
   onNewAttempt?: () => void;
@@ -53,8 +53,8 @@ export function TaskDetailsPanel({
   hideBackdrop = false,
   className,
   hideHeader = false,
-  isFullScreen = false,
-  onToggleFullScreen,
+  isFullScreen,
+  setFullScreen,
   forceCreateAttempt,
   onLeaveForceCreateAttempt,
   onNewAttempt,
@@ -118,11 +118,11 @@ export function TaskDetailsPanel({
             <ProcessSelectionProvider>
               {/* Backdrop - only on smaller screens (overlay mode) */}
               {!hideBackdrop && (
-                <div className={getBackdropClasses(true)} onClick={onClose} />
+                <div className={getBackdropClasses(isFullScreen || false)} onClick={onClose} />
               )}
 
               {/* Panel */}
-              <div className={className || getTaskPanelClasses(true)}>
+              <div className={className || getTaskPanelClasses(isFullScreen || false)}>
                 <div className="flex flex-col h-full">
                   {!hideHeader && (
                     <TaskDetailsHeader
@@ -131,7 +131,7 @@ export function TaskDetailsPanel({
                       onDeleteTask={onDeleteTask}
                       hideCloseButton={hideBackdrop}
                       isFullScreen={isFullScreen}
-                      onToggleFullScreen={onToggleFullScreen}
+                      setFullScreen={setFullScreen}
                     />
                   )}
 

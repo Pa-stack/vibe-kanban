@@ -25,7 +25,7 @@ interface TaskDetailsHeaderProps {
   onDeleteTask?: (taskId: string) => void;
   hideCloseButton?: boolean;
   isFullScreen?: boolean;
-  onToggleFullScreen?: () => void;
+  setFullScreen?: (isFullScreen: boolean) => void;
 }
 
 const statusLabels: Record<TaskStatus, string> = {
@@ -58,8 +58,8 @@ function TaskDetailsHeader({
   onEditTask,
   onDeleteTask,
   hideCloseButton = false,
-  isFullScreen = false,
-  onToggleFullScreen,
+  isFullScreen,
+  setFullScreen,
 }: TaskDetailsHeaderProps) {
   const { task } = useContext(TaskDetailsContext);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -71,14 +71,14 @@ function TaskDetailsHeader({
         {/* Top row: title and action icons */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0 flex items-start gap-2">
-            {onToggleFullScreen && !isFullScreen && (
+            {setFullScreen && !isFullScreen && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={onToggleFullScreen}
+                      onClick={() => setFullScreen(true)}
                       aria-label={
                         isFullScreen
                           ? 'Collapse to sidebar'

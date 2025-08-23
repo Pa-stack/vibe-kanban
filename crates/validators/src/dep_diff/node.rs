@@ -1,4 +1,9 @@
 use crate::{Validator, ValidatorOutcome};
 
-pub struct NodeDepDiff;
-impl Validator for NodeDepDiff { fn validate(&self) -> Result<ValidatorOutcome, String> { Ok(ValidatorOutcome { pass: true, message: None }) } }
+pub struct NodeDepDiff<'a> { pub before: &'a str, pub after: &'a str }
+impl<'a> Validator for NodeDepDiff<'a> {
+	fn validate(&self) -> Result<ValidatorOutcome, String> {
+		let pass = !self.after.lines().any(|l| l.starts_with("[package.json deps]"));
+		Ok(ValidatorOutcome { pass, message: Some(if pass {"DEP_DIFF: PASS".into()} else {"DEP_DIFF: FAIL".into()}) })
+	}
+}

@@ -383,9 +383,13 @@ export function ProjectTasks() {
   }
 
   return (
-    <div className={getMainContainerClasses(isPanelOpen, fullScreenTaskDetails)}>
+    <div
+      className={getMainContainerClasses(isPanelOpen, fullScreenTaskDetails)}
+    >
       {/* Left Column - Kanban Section */}
-      <div className={getKanbanSectionClasses(isPanelOpen, fullScreenTaskDetails)}>
+      <div
+        className={getKanbanSectionClasses(isPanelOpen, fullScreenTaskDetails)}
+      >
         {/* Header */}
 
         <div className="px-8 my-12 flex flex-row">

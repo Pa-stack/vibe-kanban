@@ -173,10 +173,11 @@ function TaskDetailsHeader({
                 {task.description ? (
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`whitespace-pre-wrap ${!isDescriptionExpanded && task.description.length > 150
-                        ? 'line-clamp-3'
-                        : ''
-                        }`}
+                      className={`whitespace-pre-wrap ${
+                        !isDescriptionExpanded && task.description.length > 150
+                          ? 'line-clamp-3'
+                          : ''
+                      }`}
                     >
                       {task.description}
                     </p>

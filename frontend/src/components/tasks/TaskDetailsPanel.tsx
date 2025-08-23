@@ -118,11 +118,18 @@ export function TaskDetailsPanel({
             <ProcessSelectionProvider>
               {/* Backdrop - only on smaller screens (overlay mode) */}
               {!hideBackdrop && (
-                <div className={getBackdropClasses(isFullScreen || false)} onClick={onClose} />
+                <div
+                  className={getBackdropClasses(isFullScreen || false)}
+                  onClick={onClose}
+                />
               )}
 
               {/* Panel */}
-              <div className={className || getTaskPanelClasses(isFullScreen || false)}>
+              <div
+                className={
+                  className || getTaskPanelClasses(isFullScreen || false)
+                }
+              >
                 <div className="flex flex-col h-full">
                   {!hideHeader && (
                     <TaskDetailsHeader
@@ -183,7 +190,7 @@ export function TaskDetailsPanel({
                           variant="sidebar"
                           forceCreateAttempt={forceCreateAttempt}
                           onLeaveForceCreateAttempt={onLeaveForceCreateAttempt}
-                        // hide actions in sidebar; moved to header in fullscreen
+                          // hide actions in sidebar; moved to header in fullscreen
                         />
 
                         {/* Actions: moved from header to sidebar in fullscreen */}

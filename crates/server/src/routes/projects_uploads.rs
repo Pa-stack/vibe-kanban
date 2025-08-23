@@ -126,9 +126,8 @@ pub async fn upload(
 
         let (row, dedup) = if let Some(r) = existing { (r, true) } else {
             let id = Uuid::new_v4();
-            let r = sqlx::query_as!(
-                ProjectCtxRow,
-                r#"INSERT INTO project_context_files (id, project_id, filename, mime, size_bytes, sha256, stored_path) VALUES (?1,?2,?3,?4,?5,?6,?7) RETURNING id as "id: Uuid", project_id as "project_id: Uuid", filename, mime, size_bytes, sha256, stored_path, created_at as "created_at: DateTime<Utc>""#,
+            let result = sqlx::query!(
+                r#"INSERT OR IGNORE INTO project_context_files (id, project_id, filename, mime, size_bytes, sha256, stored_path) VALUES (?1,?2,?3,?4,?5,?6,?7)"#,
                 id,
                 project.id,
                 fname,
@@ -137,9 +136,18 @@ pub async fn upload(
                 hash,
                 stored_path_rel
             )
+            .execute(&deployment.db().pool)
+            .await?;
+            let dedup_ins = result.rows_affected() == 0;
+            let r = sqlx::query_as!(
+                ProjectCtxRow,
+                r#"SELECT id as "id: Uuid", project_id as "project_id: Uuid", filename, mime, size_bytes, sha256, stored_path, created_at as "created_at: DateTime<Utc>" FROM project_context_files WHERE project_id = ?1 AND sha256 = ?2 LIMIT 1"#,
+                project.id,
+                hash
+            )
             .fetch_one(&deployment.db().pool)
             .await?;
-            (r, false)
+            (r, dedup_ins)
         };
 
         let meta = UploadMeta {

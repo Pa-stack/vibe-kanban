@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"name": "🔍Decompiler!",
+			"uri": "decompileFs:/"
+		},
+		{
+			"path": "../../../../IdeaProjects/fernflower-osrs/fernflower-osrs"
+		}
+	],
+	"settings": {
+		"spring.initializr.defaultJavaVersion": "8",
+		"java.import.gradle.wrapper.enabled": true,
+		"terminal.integrated.env.windows": {
+			"JAVA_HOME": "C:\\Users\\pashq\\.jdks\\temurin-1.8.0_452",
+			"PATH": "C:\\Users\\pashq\\.jdks\\temurin-1.8.0_452\\bin;${env:PATH}"
+		},
+		"gradle.nestedProjects": true,
+		"java.configuration.updateBuildConfiguration": "automatic",
+		"java.compile.nullAnalysis.mode": "automatic"
+	}
+}

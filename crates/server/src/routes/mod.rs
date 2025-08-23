@@ -23,6 +23,7 @@ pub mod tasks;
 pub mod attempts_orchestrator;
 pub mod metrics;
 pub mod tasks_uploads;
+pub mod phases;
 
 pub fn router(deployment: DeploymentImpl) -> IntoMakeService<Router> {
     // Create routers with different middleware layers
@@ -35,6 +36,7 @@ pub fn router(deployment: DeploymentImpl) -> IntoMakeService<Router> {
         .merge(tasks::router(&deployment))
         .merge(task_attempts::router(&deployment))
     .merge(attempts_orchestrator::router(&deployment))
+    .merge(phases::router(&deployment))
         .merge(execution_processes::router(&deployment))
         .merge(task_templates::router(&deployment))
     .merge(tasks_uploads::router(&deployment))

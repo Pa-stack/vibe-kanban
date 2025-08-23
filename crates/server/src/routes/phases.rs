@@ -54,6 +54,17 @@ async fn update_phase(State(deployment): State<DeploymentImpl>, Path(phase_id): 
         // Not found or not accessible
     return (StatusCode::NOT_FOUND, ResponseJson(ApiResponse::error("not_found")));
     }
+    // Validate enums when present
+    if let Some(ref typ) = p.r#type {
+        if !(matches!(typ.as_str(), "prompt" | "fix" | "hardening")) {
+            return (StatusCode::BAD_REQUEST, ResponseJson(ApiResponse::error("invalid_type")));
+        }
+    }
+    if let Some(ref status) = p.status {
+        if !(matches!(status.as_str(), "idle" | "running" | "pass" | "fail")) {
+            return (StatusCode::BAD_REQUEST, ResponseJson(ApiResponse::error("invalid_status")));
+        }
+    }
     let mut sets: Vec<&str> = Vec::new();
     if p.status.is_some() { sets.push("status = ?"); }
     if p.allowlist.is_some() { sets.push("allowlist = ?"); }
@@ -66,8 +77,17 @@ async fn update_phase(State(deployment): State<DeploymentImpl>, Path(phase_id): 
     let sql = format!("UPDATE phases SET {} WHERE phase_id = ?", sets.join(", "));
     let mut q = sqlx::query(&sql);
     if let Some(v) = p.status { q = q.bind(v); }
-    if let Some(v) = p.allowlist { q = q.bind(v.to_string()); }
-    if let Some(v) = p.denylist { q = q.bind(v.to_string()); }
+    if let Some(v) = p.allowlist {
+        // Canonicalize and cap payload size (16 KiB)
+        let s = serde_json::to_string(&v).unwrap_or_else(|_| "[]".to_string());
+        if s.len() > 16 * 1024 { return (StatusCode::PAYLOAD_TOO_LARGE, ResponseJson(ApiResponse::error("payload_too_large"))); }
+        q = q.bind(s);
+    }
+    if let Some(v) = p.denylist {
+        let s = serde_json::to_string(&v).unwrap_or_else(|_| "[]".to_string());
+        if s.len() > 16 * 1024 { return (StatusCode::PAYLOAD_TOO_LARGE, ResponseJson(ApiResponse::error("payload_too_large"))); }
+        q = q.bind(s);
+    }
     if let Some(v) = p.agent_override { q = q.bind(v); }
     if let Some(v) = p.warm_kpi_budget { q = q.bind(v); }
     if let Some(v) = p.r#type { q = q.bind(v); }

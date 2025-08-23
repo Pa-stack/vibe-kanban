@@ -1,13 +1,15 @@
-use axum::{extract::{Path, State}, response::Json as ResponseJson, routing::{post, patch, get}, Router, Json};
+use axum::{extract::{Path, State}, response::Json as ResponseJson, routing::{post, patch, get}, Router, Json, middleware::from_fn_with_state};
+use axum::http::StatusCode;
 use serde_json::json;
 use uuid::Uuid;
 use sqlx::Row;
-use crate::DeploymentImpl;
+use crate::{DeploymentImpl, middleware::load_task_middleware};
 use utils::response::ApiResponse;
 
-pub fn router(_deployment: &DeploymentImpl) -> Router<DeploymentImpl> {
+pub fn router(deployment: &DeploymentImpl) -> Router<DeploymentImpl> {
     Router::new()
-        .route("/tasks/:id/phases", post(create_phase).get(list_phases))
+        .route("/tasks/:id/phases", post(create_phase).get(list_phases)
+            .layer(from_fn_with_state(deployment.clone(), load_task_middleware)))
         .route("/phases/:id", patch(update_phase))
 }
 
@@ -38,8 +40,20 @@ async fn create_phase(State(deployment): State<DeploymentImpl>, Path(task_id): P
 #[derive(serde::Deserialize)]
 struct PhasePatch { status: Option<String>, allowlist: Option<serde_json::Value>, denylist: Option<serde_json::Value>, agent_override: Option<Option<String>>, warm_kpi_budget: Option<Option<f64>>, r#type: Option<String> }
 
-async fn update_phase(State(deployment): State<DeploymentImpl>, Path(phase_id): Path<String>, Json(p): Json<PhasePatch>) -> ResponseJson<ApiResponse<serde_json::Value>> {
+async fn update_phase(State(deployment): State<DeploymentImpl>, Path(phase_id): Path<String>, Json(p): Json<PhasePatch>) -> (StatusCode, ResponseJson<ApiResponse<serde_json::Value>>) {
     let pool = &deployment.db().pool;
+    // Enforce scoping: phase must belong to a task accessible to caller
+    let exists = sqlx::query_scalar::<_, i64>(
+    "SELECT COUNT(1) FROM phases p JOIN tasks t ON p.task_id = t.id WHERE p.phase_id = ?"
+    )
+    .bind(&phase_id)
+    .fetch_one(pool)
+    .await
+    .unwrap_or(0);
+    if exists == 0 {
+        // Not found or not accessible
+    return (StatusCode::NOT_FOUND, ResponseJson(ApiResponse::error("not_found")));
+    }
     let mut sets: Vec<&str> = Vec::new();
     if p.status.is_some() { sets.push("status = ?"); }
     if p.allowlist.is_some() { sets.push("allowlist = ?"); }
@@ -59,11 +73,11 @@ async fn update_phase(State(deployment): State<DeploymentImpl>, Path(phase_id): 
     if let Some(v) = p.r#type { q = q.bind(v); }
     q = q.bind(&now).bind(&phase_id);
     let _ = q.execute(pool).await;
-    ResponseJson(ApiResponse::success(json!({
+    (StatusCode::OK, ResponseJson(ApiResponse::success(json!({
         "phase_id": phase_id,
         "status": p.status,
         "warm_kpi_budget": p.warm_kpi_budget,
-    })))
+    }))))
 }
 
 async fn list_phases(

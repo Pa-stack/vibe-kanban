@@ -25,6 +25,11 @@ impl Artifacts {
         let path = dir.join("snippets.log");
         fs::write(path, content).map_err(|e| e.to_string())?; Ok(())
     }
+
+    pub fn write_summary_json(dir: &Path, json_bytes: &[u8]) -> Result<(), String> {
+        let path = dir.join("summary.json");
+        fs::write(path, json_bytes).map_err(|e| e.to_string())?; Ok(())
+    }
 }
 
 pub fn simple_dep_snapshot(workdir: &Path) -> String {

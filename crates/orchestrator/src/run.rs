@@ -24,7 +24,7 @@ fn metadata_header() -> String {
     )
 }
 
-pub fn run_attempt(_attempt_id: String, cfg: OrchestratorConfig, workdir: &Path) -> Result<(), String> {
+pub fn run_attempt(attempt_id: String, cfg: OrchestratorConfig, workdir: &Path) -> Result<(), String> {
     let header = metadata_header();
     let _ = Artifacts::ensure_dir(&cfg.artifacts_dir);
 
@@ -38,7 +38,10 @@ pub fn run_attempt(_attempt_id: String, cfg: OrchestratorConfig, workdir: &Path)
     let _ = raw.contains("---END PATCH---");
     let blocks = patch::parse_blocks(&raw)?;
 
-    // Apply each block and gather touched files
+        // Snapshot BEFORE
+        let dep_before = crate::artifacts::simple_dep_snapshot(workdir);
+
+        // Apply each block and gather touched files
     let mut touched: Vec<String> = Vec::new();
     for b in &blocks {
         let res = apply::apply_block(workdir, &b.content)?;
@@ -49,8 +52,10 @@ pub fn run_attempt(_attempt_id: String, cfg: OrchestratorConfig, workdir: &Path)
     Artifacts::write_touched_files(&cfg.artifacts_dir, &touched)?;
 
     // Simple dep snapshot (before/after not tracked deeply in MVP). Just write current.
-    let dep = crate::artifacts::simple_dep_snapshot(workdir);
-    Artifacts::write_dep_snapshot(&cfg.artifacts_dir, &dep)?;
+        // Snapshot AFTER
+        let dep_after = crate::artifacts::simple_dep_snapshot(workdir);
+        let dep_combined = format!("=== BEFORE ===\n{}\n=== AFTER ===\n{}\n", dep_before, dep_after);
+        Artifacts::write_dep_snapshot(&cfg.artifacts_dir, &dep_combined)?;
 
     // Double run
     let outcome = test::run_two(workdir, &cfg.cache_dir, None)?;
@@ -61,14 +66,18 @@ pub fn run_attempt(_attempt_id: String, cfg: OrchestratorConfig, workdir: &Path)
     Artifacts::write_kpi_json_raw(&cfg.artifacts_dir, kpi.as_bytes())?;
     // Validators
     let scope = validators::scope_guard::ScopeGuard { touched: &touched, allowlist: None };
-    let scope_res = scope.validate()?.message.unwrap_or_default();
-    let dep_rust = validators::dep_diff::rust::RustDepDiff { before: &dep, after: &dep };
-    let dep_node = validators::dep_diff::node::NodeDepDiff { before: &dep, after: &dep };
-    let dep_msg = if dep_rust.validate()?.pass && dep_node.validate()?.pass { "DEP_DIFF: PASS".to_string() } else { "DEP_DIFF: FAIL".to_string() };
+    let scope_val = scope.validate()?;
+    let scope_res = scope_val.message.clone().unwrap_or_default();
+        let dep_rust = validators::dep_diff::rust::RustDepDiff { before: &dep_before, after: &dep_after };
+        let dep_node = validators::dep_diff::node::NodeDepDiff { before: &dep_before, after: &dep_after };
+    let dep_rust_pass = dep_rust.validate()?.pass;
+    let dep_node_pass = dep_node.validate()?.pass;
+    let dep_msg = if dep_rust_pass && dep_node_pass { "DEP_DIFF: PASS".to_string() } else { "DEP_DIFF: FAIL".to_string() };
     let det = validators::determinism::Determinism { snippets: &outcome.snippets };
     let det_pass = det.validate()?.pass;
     let kpi_v = validators::kpi::Kpi { kpi_json: &kpi };
-    let kpi_msg = kpi_v.validate()?.message.unwrap_or_default();
+    let kpi_val = kpi_v.validate()?;
+    let kpi_msg = kpi_val.message.clone().unwrap_or_default();
     let mut combined = String::new();
     combined.push_str(&header);
     combined.push('\n');
@@ -81,7 +90,37 @@ pub fn run_attempt(_attempt_id: String, cfg: OrchestratorConfig, workdir: &Path)
     combined.push_str(&kpi_msg);
     combined.push('\n');
     combined.push_str(&outcome.snippets);
+    // Append condensed validators status line for SSE-friendly consumption
+    let as_pass_fail = |b: bool| if b { "PASS" } else { "FAIL" };
+    let validators_line = format!(
+        "ORCH: validators: scope={} dep={} api=SKIP det={} kpi={}",
+        as_pass_fail(scope_val.pass),
+        as_pass_fail(dep_rust_pass && dep_node_pass),
+        as_pass_fail(det_pass),
+        as_pass_fail(kpi_val.pass)
+    );
+    combined.push('\n');
+    combined.push_str(&validators_line);
     Artifacts::write_snippets_log(&cfg.artifacts_dir, &combined)?;
+
+    // Machine-readable summary.json (idempotent overwrite)
+    let summary = serde_json::json!({
+        "attempt_id": attempt_id,
+        "validator": {
+            "scope": scope_val.pass,
+            "dep": dep_rust_pass && dep_node_pass,
+            "api": serde_json::Value::Null,
+            "det": det_pass,
+            "kpi": kpi_val.pass
+        },
+        "timing": {
+            "cold_sec": outcome.cold_sec,
+            "warm_sec": outcome.warm_sec
+        },
+        "cache_hit_count": outcome.cache_hit_count
+    });
+    let bytes = serde_json::to_vec_pretty(&summary).map_err(|e| e.to_string())?;
+    Artifacts::write_summary_json(&cfg.artifacts_dir, &bytes)?;
 
     Ok(())
 }

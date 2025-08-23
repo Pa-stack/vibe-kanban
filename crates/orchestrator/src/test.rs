@@ -41,9 +41,15 @@ pub fn run_two(work_dir: &std::path::Path, _cache_dir: &std::path::Path, test_cm
     for line in cold_out.lines().chain(warm_out.lines()) {
         if line.to_uppercase().contains("CACHE_HIT") { cache_hits += 1; }
     }
-    // very small digest: sum of bytes as hex
-    let sum: u64 = warm_out.as_bytes().iter().fold(0u64, |acc, b| acc.wrapping_add(*b as u64));
-    let digest = format!("OUTPUT_DIGEST={:016x}", sum);
-    let snippets = format!("{}\n{}", if cache_hits>0 {"CACHE_HIT"} else {""}, digest);
+    // very small digest: sum of bytes as hex for both runs
+    let sum_cold: u64 = cold_out.as_bytes().iter().fold(0u64, |acc, b| acc.wrapping_add(*b as u64));
+    let sum_warm: u64 = warm_out.as_bytes().iter().fold(0u64, |acc, b| acc.wrapping_add(*b as u64));
+    let digest_cold = format!("OUTPUT_DIGEST_COLD={:016x}", sum_cold);
+    let digest_warm = format!("OUTPUT_DIGEST_WARM={:016x}", sum_warm);
+    let mut lines = Vec::new();
+    if cache_hits>0 { lines.push("CACHE_HIT".to_string()); }
+    lines.push(digest_cold);
+    lines.push(digest_warm);
+    let snippets = lines.join("\n");
     Ok(RunOutcome { cold_sec: cold_s, warm_sec: warm_s, cache_hit_count: cache_hits, snippets })
 }

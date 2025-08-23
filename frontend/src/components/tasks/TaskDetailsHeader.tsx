@@ -67,18 +67,23 @@ function TaskDetailsHeader({
   return (
     <div>
       {/* Title and Task Actions */}
-      <div className="p-4 pb-2">
+      <div className="p-4 pb-2 border-b-2 border-muted">
         {/* Top row: title and action icons */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0 flex items-start gap-2">
-            {setFullScreen && !isFullScreen && (
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-bold mb-1 line-clamp-2">
+                {task.title}
+              </h2>
+            </div>
+            {setFullScreen && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setFullScreen(true)}
+                      onClick={() => setFullScreen(!isFullScreen)}
                       aria-label={
                         isFullScreen
                           ? 'Collapse to sidebar'
@@ -101,13 +106,6 @@ function TaskDetailsHeader({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            )}
-            {!isFullScreen && (
-              <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-bold mb-1 line-clamp-2">
-                  {task.title}
-                </h2>
-              </div>
             )}
             <div className="flex items-center gap-1">
               {onEditTask && !isFullScreen && (

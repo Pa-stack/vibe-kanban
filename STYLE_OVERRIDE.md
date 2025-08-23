@@ -5,7 +5,7 @@ Simple API for overriding styles when embedding the frontend in an iframe.
 ## Usage
 
 ```javascript
-// Switch theme
+// Switch themee
 iframe.contentWindow.postMessage({
   type: 'VIBE_STYLE',
   theme: 'purple'  // 'system', 'light', 'dark', 'purple', 'green', 'blue', 'orange', 'red'
@@ -42,7 +42,7 @@ iframe.contentWindow.postMessage({
 <iframe id="vibe" src="https://app.com" width="100%" height="600"></iframe>
 <script>
   const iframe = document.getElementById('vibe');
-  
+
   iframe.addEventListener('load', () => {
     // Apply custom theme
     iframe.contentWindow.postMessage({

@@ -1,0 +1,13 @@
+PRAGMA foreign_keys = ON;
+ALTER TABLE task_attempts ADD COLUMN phase_id BLOB;
+ALTER TABLE task_attempts ADD COLUMN agent_profile TEXT;
+ALTER TABLE task_attempts ADD COLUMN prompt_tokens INTEGER;
+ALTER TABLE task_attempts ADD COLUMN completion_tokens INTEGER;
+ALTER TABLE task_attempts ADD COLUMN cold_sec INTEGER;
+ALTER TABLE task_attempts ADD COLUMN warm_sec INTEGER;
+ALTER TABLE task_attempts ADD COLUMN cache_hit_count INTEGER;
+ALTER TABLE task_attempts ADD COLUMN scope_pass INTEGER DEFAULT 0;
+ALTER TABLE task_attempts ADD COLUMN dep_pass INTEGER DEFAULT 0;
+ALTER TABLE task_attempts ADD COLUMN api_pass INTEGER DEFAULT 0;
+ALTER TABLE task_attempts ADD COLUMN det_pass INTEGER DEFAULT 0;
+ALTER TABLE task_attempts ADD COLUMN kpi_pass INTEGER DEFAULT 0;

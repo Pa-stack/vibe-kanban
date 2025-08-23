@@ -16,13 +16,10 @@ pub mod frontend;
 pub mod health;
 pub mod images;
 pub mod projects;
-pub mod projects_uploads;
 pub mod task_attempts;
 pub mod task_templates;
 pub mod tasks;
 pub mod attempts_orchestrator;
-pub mod metrics;
-pub mod tasks_uploads;
 
 pub fn router(deployment: DeploymentImpl) -> IntoMakeService<Router> {
     // Create routers with different middleware layers
@@ -31,14 +28,11 @@ pub fn router(deployment: DeploymentImpl) -> IntoMakeService<Router> {
         .merge(config::router())
         .merge(containers::router(&deployment))
         .merge(projects::router(&deployment))
-    .merge(projects_uploads::router(&deployment))
         .merge(tasks::router(&deployment))
         .merge(task_attempts::router(&deployment))
     .merge(attempts_orchestrator::router(&deployment))
         .merge(execution_processes::router(&deployment))
         .merge(task_templates::router(&deployment))
-    .merge(tasks_uploads::router(&deployment))
-    .merge(metrics::router(&deployment))
         .merge(auth::router(&deployment))
         .merge(filesystem::router())
         .merge(events::router(&deployment))

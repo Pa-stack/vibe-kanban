@@ -1,0 +1,7 @@
+[package]
+name = "validators"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+# No external runtime deps for P1 scaffolding

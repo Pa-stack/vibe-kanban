@@ -1,0 +1,4 @@
+Agents MUST emit unified diffs only. Include metadata headers before each section: ALGO_VERSION, CANONICAL_CONFIG_SHA256, RUNTIME_VERSION, COMMIT_OR_ARTIFACT_HASH.
+---BEGIN PATCH---
+<unified diff>
+---END PATCH---
